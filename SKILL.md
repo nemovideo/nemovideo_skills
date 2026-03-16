@@ -290,7 +290,7 @@ curl -X GET "${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}/api/render/proxy
 | `2001` | 积分不足 |
 | `4001` | 文件类型不支持 |
 | `4002` | 文件过大 |
-| `429` | 请求频率过高（每人每 7 天 1 个，同 IP 最多 10 个/7 天） |
+| `429` | 请求频率过高（每人每 7 天 1 个） |
 | `400` | 缺少必填头 `X-Client-Id`（匿名 Token 必须带该头） |
 
 ## Token 权限范围
