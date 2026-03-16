@@ -1,40 +1,102 @@
-# Nemo Video Skill
+# 🎬 NemoVideo — AI Video Creation Skill
 
-Nemo Video AI 视频创作平台的 Agent Skill。
+Create videos by chatting. Describe what you want → AI generates → edit → export → receive the file.
 
-## 功能
+> An [OpenClaw](https://openclaw.ai) Skill that connects any AI agent to NemoVideo's video creation engine.
 
-- 与 Nemo Video AI Agent 对话，自动创作视频
-- 上传素材（视频、图片、音频）
-- 获取会话状态（素材、轨道、AI 分析结果）
-- 导出视频
-- **零配置**：首次使用自动获取匿名 Token，无需注册
+## What It Does
 
-## 快速开始
+- **Text to Video** — describe a scene, get a video clip
+- **AI Editing** — add BGM, titles, subtitles, transitions, effects by chatting
+- **Export** — render and download finished MP4 directly in chat
+- **Upload & Edit** — bring your own footage, let AI remix it
+- **Zero Config** — works out of the box with free 100 credits, no signup needed
 
-直接使用即可，Skill 会自动创建匿名账号并下发 100 试用积分：
+## Quick Start
+
+### Install via ClawHub
+
+```bash
+clawhub install nemo-video
+```
+
+### Or install manually
+
+Copy the `SKILL.md` and `references/` folder to your OpenClaw skills directory:
+
+```bash
+# Clone the repo
+git clone https://github.com/<org>/nemovideo-skill.git
+
+# Copy to your OpenClaw skills directory
+cp -r nemovideo-skill ~/.openclaw/skills/nemo-video
+```
+
+### Use it
+
+Just talk to your agent:
 
 ```
-帮我用 nemo_video 创建一个 30 秒的产品介绍视频
+"Make me a 10-second sunset timelapse video"
+"Add lo-fi background music"
+"Put a title 'Golden Hour' at the beginning"
+"Export it"
 ```
 
-## 环境变量
+## How It Works
 
-| 变量 | 必填 | 说明 |
-|------|------|------|
-| `NEMO_TOKEN` | 否 | User Access Token，首次使用时自动生成 |
-| `NEMO_API_URL` | 否 | API 地址，默认 `https://mega-api-dev.nemovideo.ai` |
+```
+You ↔ OpenClaw Agent ↔ [SKILL.md] ↔ NemoVideo Backend AI Agent
+                           ↕
+                    API (SSE + REST)
+```
 
-## 匿名用户限制
+The Skill acts as an **interface layer** between OpenClaw and NemoVideo's backend:
 
-- Token 有效期 7 天
-- 试用积分 100 点
-- 每 IP 每小时最多申请 5 个匿名 Token
+1. **Relay** — forwards your requests to NemoVideo's AI agent
+2. **Translate** — converts GUI-oriented responses into chat-friendly actions
+3. **Supplement** — handles export, credits, and file delivery directly via API
+4. **Recover** — manages SSE timeouts, silent responses, and disconnects
 
-## 积分不足
+## Configuration
 
-- **匿名用户**：注册正式账号，链接须带当前匿名用户 ID 以绑定新账号：`https://nemovideo.com/register?bind=<user_id>`（`user_id` 为 anon_xxx）
-- **正式用户**：购买更多积分 → https://nemovideo.com
+| Environment Variable | Required | Default |
+|---------------------|----------|---------|
+| `NEMO_TOKEN` | No | Auto-generated (100 free credits) |
+| `NEMO_API_URL` | No | `https://mega-api-dev.nemovideo.ai` |
+
+**No config needed for first use.** The Skill auto-creates an anonymous account with 100 trial credits.
+
+### Getting More Credits
+
+When free credits run out, the Skill provides a registration link that preserves your project history. Register at [nemovideo.ai](https://nemovideo.ai) for more credits.
+
+## Supported Formats
+
+| Type | Formats |
+|------|---------|
+| Video | mp4, mov, avi, webm, mkv |
+| Image | jpg, png, gif, webp |
+| Audio | mp3, wav, m4a, aac |
+
+## File Structure
+
+```
+nemo-video/
+├── SKILL.md                    # Main skill instructions (299 lines)
+└── references/
+    └── api-reference.md        # Complete API documentation (321 lines)
+```
+
+## Version
+
+Current: **v4.4**
+
+## Links
+
+- 🌐 [NemoVideo](https://nemovideo.ai) — Product website
+- 📦 [ClawHub](https://clawhub.com) — Skill marketplace
+- 🐙 [OpenClaw](https://openclaw.ai) — Agent framework
 
 ## License
 
