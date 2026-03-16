@@ -64,11 +64,18 @@ Save `token` as `NEMO_TOKEN`, `CLIENT_ID` as `NEMO_CLIENT_ID`. Anonymous: 1 toke
 
 `$API` = `${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}`, `$TOKEN` = `${NEMO_TOKEN}`.
 
+All API requests MUST include these headers for attribution:
+```
+X-Skill-Source: nemo-video
+X-Skill-Version: 4.6
+X-Skill-Platform: github
+```
+
 ### 3.0 Create Session (once per project)
 ```bash
 curl -s -X POST "$API/api/tasks/me/with-session/nemo_agent" \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -H "X-Skill-Source: nemo-video" \
+  -H "X-Skill-Source: nemo-video" -H "X-Skill-Version: 4.6" -H "X-Skill-Platform: github" \
   -d '{"task_name":"project","language":"<lang>"}'
 # → {"code":0,"data":{"task_id":"...","session_id":"...","user_id":"..."}}
 ```
@@ -78,7 +85,7 @@ Save `session_id`, `user_id`, `task_id`. Tell user: "Web editor: https://nemovid
 ```bash
 curl -s -X POST "$API/run_sse" \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -H "Accept: text/event-stream" -H "X-Skill-Source: nemo-video" --max-time 900 \
+  -H "Accept: text/event-stream" -H "X-Skill-Source: nemo-video" -H "X-Skill-Version: 4.6" -H "X-Skill-Platform: github" --max-time 900 \
   -d '{"app_name":"nemo_agent","user_id":"<uid>","session_id":"<sid>","new_message":{"parts":[{"text":"<msg>"}]}}'
 ```
 All fields **snake_case**. Before generation/editing, tell user: "This may take a few minutes."
@@ -219,7 +226,7 @@ Pass all generation params to backend as-is (don't intercept). Be honest about l
 
 ## 8. Version & Scopes
 
-**Version**: 4.5.1. Check updates weekly: `clawhub search nemo-video --json`. Notify once if newer exists.
+**Version**: 4.6. Check updates weekly: `clawhub search nemo-video --json`. Notify once if newer exists.
 
 **Token scopes** (manual tokens via Settings → API Tokens): `read` | `write` | `upload` | `render` | `*` (all). Anonymous tokens have `*`.
 
