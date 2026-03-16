@@ -33,7 +33,7 @@ Nemo Video AI 视频创作平台的 Agent Skill。
 
 ## 积分不足
 
-- **匿名用户**：注册正式账号 → https://nemovideo.com
+- **匿名用户**：注册正式账号，链接须带当前匿名用户 ID 以绑定新账号：`https://nemovideo.com/register?bind=<user_id>`（`user_id` 为 anon_xxx）
 - **正式用户**：购买更多积分 → https://nemovideo.com
 
 ## License

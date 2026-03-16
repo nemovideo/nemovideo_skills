@@ -211,12 +211,12 @@ curl -X GET "${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}/api/state/nemo_a
 
 ### Step 5: 导出视频
 
-当 `draft` 非空时，可以渲染为最终视频。
+当 `draft` 非空时，可以渲染为最终视频（使用 Lambda 分布式渲染）。
 
 #### 5.1 创建渲染任务
 
 ```bash
-curl -X POST "${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}/api/render/proxy/draft" \
+curl -X POST "${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}/api/render/proxy/lambda" \
   -H "Authorization: Bearer ${NEMO_TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -230,7 +230,7 @@ curl -X POST "${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}/api/render/prox
 #### 5.2 查询渲染状态
 
 ```bash
-curl -X GET "${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}/api/render/proxy/<render_task_id>" \
+curl -X GET "${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}/api/render/proxy/lambda/<render_task_id>" \
   -H "Authorization: Bearer ${NEMO_TOKEN}"
 ```
 
@@ -297,8 +297,10 @@ curl -X GET "${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}/api/render/proxy
 
 当收到错误码 `2001`（积分不足）时：
 
-- **匿名用户**（`user_id` 以 `anon_` 开头）：需注册正式账号
-  - 注册地址：https://nemovideo.com
-  
+- **匿名用户**（`user_id` 以 `anon_` 开头）：需注册正式账号，**注册链接必须带上当前匿名用户标识以便与新账号绑定**：
+  - 注册地址格式：`https://nemovideo.com/register?bind=${user_id}`
+  - 其中 `user_id` 为当前匿名用户的 ID（如 `anon_abc123`），由创建会话或匿名 Token 接口返回，不可省略。
+  - 示例：`https://nemovideo.com/register?bind=anon_abc123def4567890`
+
 - **正式用户**：需购买更多积分
   - 续费地址：https://nemovideo.com
