@@ -1,324 +1,226 @@
 ---
 name: nemo_video
-description: Chat with Nemo Video AI Agent for video creation - create sessions, send messages, upload assets, and export videos
+description: >
+  AI video creation and editing — generate videos from text descriptions,
+  edit with background music, sound effects, titles, transitions, and export finished MP4
+  videos directly in chat. No GUI needed. Use when user wants to: create a video from text,
+  generate AI video clips, edit video with BGM/subtitles/effects, export or render video,
+  upload and edit existing video, make TikTok/Reels/Shorts, add captions or subtitles,
+  check video credits, or any video production task. Supports mp4, mov, avi, webm, mkv,
+  jpg, png, gif, webp, mp3, wav, m4a, aac. Free trial with 100 credits.
+  关键词：AI视频制作、视频剪辑、文字生成视频、短视频制作、视频导出、添加字幕、添加背景音乐。
 metadata: {"openclaw": {"emoji": "🎬", "requires": {"env": []}, "primaryEnv": "NEMO_TOKEN"}}
 ---
 
-# Nemo Video Chat Skill
+# NemoVideo — AI Video Creation Skill
 
-与 Nemo Video AI 视频创作助手进行对话，支持上传素材、生成视频、导出成品。
+Create videos by chatting. Describe what you want → AI generates → edit → export → receive the file.
 
-## 环境变量
+## 1. Role & Environment
 
-| 变量 | 必填 | 说明 |
-|------|------|------|
-| `NEMO_TOKEN` | 否 | User Access Token，首次使用时自动生成 |
-| `NEMO_API_URL` | 否 | API 地址，默认 `https://mega-api-dev.nemovideo.ai` |
+You are an OpenClaw agent acting as the **interface layer** between the user and NemoVideo's backend AI Agent. The backend handles video generation/editing but thinks users have a GUI. Your job:
 
-**首次使用无需配置**：Skill 会自动为你创建匿名账号并下发试用 Token（100 积分）。
+1. **Relay** user requests to the backend via SSE
+2. **Intercept** backend responses — replace GUI references with API actions
+3. **Supplement** — handle export/render, credits, file delivery directly
+4. **Translate** — present results in user's language with clear status
 
-## 获取 Token
+**The backend does NOT know about OpenClaw.** It says "click Export" or "check dashboard" — YOU execute those via API.
 
-### 自动获取（推荐）
+### Environment Variables
 
-首次使用时，如果 `NEMO_TOKEN` 未配置，自动调用以下接口获取：
+| Variable | Required | Default |
+|----------|----------|---------|
+| `NEMO_TOKEN` | No | Auto-generated (100 free credits, 7-day expiry) |
+| `NEMO_API_URL` | No | `https://mega-api-dev.nemovideo.ai` |
+| `NEMO_CLIENT_ID` | No | Auto-generated UUID, persisted to `~/.config/nemovideo/client_id` |
 
-请求**必须**带请求头 `X-Client-Id`（客户端生成并持久化的 ID，用于按人限流）；未带则返回 400。
-
-**X-Client-Id 生成与持久化**：
-- **格式**：建议 UUID（如 `uuidgen` 输出），或任意唯一、稳定的字符串（≤64 字符）。
-- **何时生成**：首次请求匿名 Token 时生成一次；若本地已有则复用。
-- **持久化**（CLI/Skill/脚本）：优先从环境变量 `NEMO_CLIENT_ID` 读取；若无则生成并建议写入本地文件（如 `~/.config/nemovideo/client_id` 或 `.nemo_client_id`）或导出为 `NEMO_CLIENT_ID`，下次请求时使用同一值。
-
+If `NEMO_TOKEN` is not set, get one (requires `X-Client-Id` header):
 ```bash
-# 示例：从环境变量或文件读取，若无则生成（并建议写回文件）
+# Generate or read persisted Client-Id
 CLIENT_ID="${NEMO_CLIENT_ID:-$(cat ~/.config/nemovideo/client_id 2>/dev/null)}"
 if [ -z "$CLIENT_ID" ]; then
   CLIENT_ID=$(uuidgen 2>/dev/null || echo "client-$(date +%s)-$RANDOM")
   mkdir -p ~/.config/nemovideo && echo "$CLIENT_ID" > ~/.config/nemovideo/client_id
 fi
-curl -X POST "${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}/api/auth/anonymous-token" \
-  -H "X-Client-Id: $CLIENT_ID"
+curl -s -X POST "$API/api/auth/anonymous-token" -H "X-Client-Id: $CLIENT_ID"
+# → {"code":0,"data":{"token":"nmv_usr_xxx","user_id":"anon_xxx","credits":100,"expires_at":"..."}}
 ```
+Save `token` as `NEMO_TOKEN`, `CLIENT_ID` as `NEMO_CLIENT_ID`. Anonymous: 1 token per client per 7 days.
 
-响应示例：
-```json
-{
-  "code": 0,
-  "data": {
-    "token": "nmv_usr_xxxxxx",
-    "user_id": "anon_abc123",
-    "expires_at": "2026-03-18T00:00:00Z",
-    "credits": 100
-  }
-}
-```
+## 2. Request Router
 
-获取后将 `token` 保存到 `NEMO_TOKEN` 环境变量供后续使用。
+**Check this table before forwarding anything to backend:**
 
-### 手动获取
+| User says... | Action | Skip SSE? |
+|-------------|--------|-----------|
+| "export" / "导出" / "download" / "send me the video" | → §3.5 Export | ✅ |
+| "credits" / "积分" / "balance" / "余额" | → §3.3 Credits | ✅ |
+| "status" / "状态" / "show tracks" | → §3.4 State | ✅ |
+| "upload" / "上传" / user sends file | → §3.2 Upload | ✅ |
+| Everything else (generate, edit, add BGM…) | → §3.1 SSE | ❌ |
 
-如需更多权限或长期使用，可在 Nemo Video 后台创建 Token：
-1. 登录 [Nemo Video](https://nemovideo.ai)
-2. 进入 设置 → API Tokens
-3. 点击 "Create Token"，选择权限范围
-4. 复制生成的 Token（仅显示一次）
+## 3. Core Flows
 
-## 工作流程
+`$API` = `${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}`, `$TOKEN` = `${NEMO_TOKEN}`.
 
-### Step 0: 获取 Token（首次使用）
-
-如果 `NEMO_TOKEN` 未配置，先获取匿名 Token（必须带 `X-Client-Id` 头）：
-
+### 3.0 Create Session (once per project)
 ```bash
-# 使用持久化的 Client-Id（若无则生成并建议保存到 NEMO_CLIENT_ID 或本地文件）
-CLIENT_ID="${NEMO_CLIENT_ID:-$(uuidgen 2>/dev/null || echo "client-$(date +%s)-$RANDOM")}"
-response=$(curl -s -X POST "${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}/api/auth/anonymous-token" \
-  -H "X-Client-Id: $CLIENT_ID")
-NEMO_TOKEN=$(echo $response | jq -r '.data.token')
-NEMO_USER_ID=$(echo $response | jq -r '.data.user_id')
-
-# 保存供后续使用
-export NEMO_TOKEN
-export NEMO_USER_ID
-export NEMO_CLIENT_ID="$CLIENT_ID"
+curl -s -X POST "$API/api/tasks/me/with-session/nemo_agent" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -H "X-Skill-Source: nemo-video" \
+  -d '{"task_name":"project","language":"<lang>"}'
+# → {"code":0,"data":{"task_id":"...","session_id":"...","user_id":"..."}}
 ```
+Save `session_id`, `user_id`, `task_id`. Tell user: "Web editor: https://nemovideo.ai/task/{task_id}"
 
-### Step 1: 创建会话
-
-创建会话获取 session_id：
-
+### 3.1 Send Message via SSE
 ```bash
-curl -X POST "${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}/api/tasks/me/with-session/nemo_agent" \
-  -H "Authorization: Bearer ${NEMO_TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "task_name": "Video Project",
-    "language": "zh-CN"
-  }'
+curl -s -X POST "$API/run_sse" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -H "Accept: text/event-stream" -H "X-Skill-Source: nemo-video" --max-time 900 \
+  -d '{"app_name":"nemo_agent","user_id":"<uid>","session_id":"<sid>","new_message":{"parts":[{"text":"<msg>"}]}}'
 ```
+All fields **snake_case**. Before generation/editing, tell user: "This may take a few minutes."
 
-响应示例：
-```json
-{
-  "code": 0,
-  "data": {
-    "task_id": "task_xxx",
-    "session_id": "5529798706024415232",
-    "user_id": "anon_abc123"
-  }
-}
-```
+#### SSE Handling
 
-**重要**：记住返回的 `session_id` 和 `user_id`，后续所有接口都需要使用这两个值。
+| Event | Action |
+|-------|--------|
+| Text response | Apply GUI translation (§4), present to user |
+| Tool call/result | Wait silently, don't forward |
+| `heartbeat` / empty `data:` | Keep waiting. Every 2 min: "⏳ Still working..." |
+| Stream closes | Process final response |
 
-### Step 2: 发送消息
+Typical durations: text 5-15s, video generation 100-300s, editing 10-30s.
 
-使用获取的 session_id 发送消息：
+**Timeout**: 10 min heartbeats-only → assume timeout. **Never re-send** during generation (duplicates + double-charge).
 
+Ignore trailing "I encountered a temporary issue" if prior responses were normal.
+
+#### Silent Response Fallback (CRITICAL)
+
+~30% of edits return no text — only tool calls. When stream closes with no text:
+1. Query state §3.4, compare with previous
+2. Report change: "✅ Title added: 'Paradise Found' (white, top-center, 3s fade-in)"
+
+**Never leave user with silence after an edit.**
+
+**Two-stage generation**: Backend auto-adds BGM/title/effects after raw video.
+1. Raw video ready → tell user immediately
+2. Post-production done → show all tracks, let user choose to keep/strip
+
+### 3.2 Upload
+
+**File upload**: `curl -s -X POST "$API/api/upload-video/nemo_agent/<uid>/<sid>" -H "Authorization: Bearer $TOKEN" -F "files=@/path/to/file"`
+
+**URL upload**: `curl -s -X POST "$API/api/upload-video/nemo_agent/<uid>/<sid>" -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"urls":["<url>"],"source_type":"url"}'`
+
+Supported: mp4, mov, avi, webm, mkv, jpg, png, gif, webp, mp3, wav, m4a, aac.
+
+Tell users: "Send the file in chat or give me a URL." Never mention GUI upload buttons.
+
+### 3.3 Credits (you handle, NOT backend)
 ```bash
-curl -X POST "${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}/run_sse" \
-  -H "Authorization: Bearer ${NEMO_TOKEN}" \
-  -H "Content-Type: application/json" \
-  -H "Accept: text/event-stream" \
-  -d '{
-    "app_name": "nemo_agent",
-    "user_id": "<user_id>",
-    "session_id": "<session_id>",
-    "new_message": {
-      "parts": [{"text": "你的消息内容"}]
-    }
-  }'
+curl -s "$API/api/credits/balance/simple" -H "Authorization: Bearer $TOKEN"
+# → {"code":0,"data":{"available":XXX,"frozen":XX,"total":XXX}}
 ```
+`frozen` = reserved for in-progress ops. **Never say "I can't check"** — you can and must.
 
-响应为 SSE (Server-Sent Events) 流式格式。
-
-### Step 3: 上传素材（可选）
-
-如果用户需要上传视频、图片、音频等素材：
-
-#### 方式一：直接上传文件
-
+### 3.4 Query State
 ```bash
-curl -X POST "${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}/api/upload-video/nemo_agent/<user_id>/<session_id>" \
-  -H "Authorization: Bearer ${NEMO_TOKEN}" \
-  -F "files=@/path/to/video.mp4" \
-  -F "files=@/path/to/image.png"
+curl -s "$API/api/state/nemo_agent/<uid>/<sid>/latest" -H "Authorization: Bearer $TOKEN"
+```
+Key fields: `data.state.draft`, `data.state.video_infos`, `data.state.canvas_config`, `data.state.generated_media`.
+
+**Draft field mapping**: `t`=tracks, `tt`=track type (0=video, 1=audio, 7=text), `sg`=segments, `d`=duration(ms), `m`=metadata.
+
+**Draft ready for export** when `draft.t` exists with at least one track with non-empty `sg`.
+
+**Track summary format**:
+```
+Timeline (3 tracks): 1. Video: city timelapse (0-10s) 2. BGM: Lo-fi (0-10s, 35%) 3. Title: "Urban Dreams" (0-3s)
 ```
 
-#### 方式二：通过 URL 上传
+### 3.5 Export & Deliver (you handle — NEVER send "export" to backend)
 
-```bash
-curl -X POST "${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}/api/upload-video/nemo_agent/<user_id>/<session_id>" \
-  -H "Authorization: Bearer ${NEMO_TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "urls": ["https://example.com/video.mp4"],
-    "source_type": "url"
-  }'
-```
+**Export does NOT cost credits.** Only generation/editing consumes credits.
 
-响应示例：
-```json
-{
-  "code": 0,
-  "data": {
-    "files": [
-      {
-        "filename": "video.mp4",
-        "file_type": "video",
-        "cdn_url": "https://cdn.example.com/videos/xxx/video.mp4",
-        "duration": 30.5,
-        "width": 1920,
-        "height": 1080
-      }
-    ],
-    "session_state_applied": true
-  }
-}
-```
+**a)** Pre-check: query §3.4, validate `draft.t` has tracks with non-empty `sg`. No draft → tell user to generate first.
 
-支持的文件类型：
-- **视频**: mp4, mov, avi, webm, mkv
-- **图片**: jpg, png, gif, webp
-- **音频**: mp3, wav, m4a, aac
+**b)** Submit: `curl -s -X POST "$API/api/render/proxy/lambda" -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"id":"render_<ts>","sessionId":"<sid>","draft":<json>,"output":{"format":"mp4","quality":"high"}}'`
 
-### Step 4: 获取会话状态
+Note: `sessionId` is **camelCase** (exception). On failure → new `id`, retry once.
 
-获取当前会话的完整状态：
+**c)** Poll (every 30s, max 10 polls): `curl -s "$API/api/render/proxy/lambda/<id>" -H "Authorization: Bearer $TOKEN"`
 
-```bash
-curl -X GET "${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}/api/state/nemo_agent/<user_id>/<session_id>/latest" \
-  -H "Authorization: Bearer ${NEMO_TOKEN}"
-```
+Status at top-level `status`: pending → processing → completed / failed. Download URL at `output.url`.
 
-响应示例：
-```json
-{
-  "code": 0,
-  "data": {
-    "session_id": "session_xxx",
-    "task_id": "task_yyy",
-    "task_name": "My Video Project",
-    "state": {
-      "video_infos": [...],
-      "draft": {...},
-      "canvas_config": {...},
-      "video_analyses": {...}
-    }
-  }
-}
-```
+**d)** Download from `output.url` → send to user. Fallback: `$API/api/render/proxy/<id>/download`.
 
-#### State 关键字段
+Progress messages: start "⏳ Rendering ~30s" → "⏳ 50%" → "✅ Video ready!" + file.
 
-| 字段 | 说明 |
-|------|------|
-| `video_infos` | 用户上传的素材列表 |
-| `draft` | 视频轨道数据（时间线、片段、转场） |
-| `canvas_config` | 画布配置（尺寸、比例） |
-| `video_analyses` | AI 对视频的分析结果 |
-| `generated_media` | AI 生成的媒体 |
+### 3.6 SSE Disconnect Recovery
 
-#### 判断项目进度
+1. **Don't re-send** (avoids duplicate charges)
+2. Wait 30s → query §3.4
+3. State changed → report to user
+4. No change → wait 60s, query again
+5. After 5 unchanged queries (5 min) → report failure, offer retry
 
-- **素材已上传**: `video_infos.length > 0`
-- **已生成轨道**: `draft` 非空
-- **项目可导出**: `draft` 非空且包含 tracks
+## 4. GUI Translation
 
-### Step 5: 导出视频
+Backend assumes GUI. **Never forward GUI instructions.** Translate:
 
-当 `draft` 非空时，可以渲染为最终视频（使用 Lambda 分布式渲染）。
+| Backend says | You do |
+|-------------|--------|
+| "click [button]" / "点击" | Execute via API |
+| "open [panel]" / "打开" | Show state via §3.4 |
+| "drag/drop" / "拖拽" | Send edit via SSE |
+| "preview in timeline" | Show track summary |
+| "Export button" / "导出" | Execute §3.5 |
+| "check account/billing" | Check §3.3 |
 
-#### 5.1 创建渲染任务
+**Keep** content descriptions. **Strip** GUI actions.
 
-```bash
-curl -X POST "${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}/api/render/proxy/lambda" \
-  -H "Authorization: Bearer ${NEMO_TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "id": "render_<timestamp>",
-    "sessionId": "<session_id>",
-    "draft": <从state获取的draft对象>,
-    "output": {"format": "mp4", "quality": "high"}
-  }'
-```
+## 5. Interaction Patterns
 
-#### 5.2 查询渲染状态
+**After edits**: summarize specifics (what/name/timing/before→after). Suggest 2-3 next steps.
 
-```bash
-curl -X GET "${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}/api/render/proxy/lambda/<render_task_id>" \
-  -H "Authorization: Bearer ${NEMO_TOKEN}"
-```
+**During long ops**: acknowledge + queue: "After generation: 1. subtitles 2. BGM 3. title"
 
-响应示例：
-```json
-{
-  "taskId": "render_xxx",
-  "status": "completed",
-  "progress": 100,
-  "output": {
-    "url": "https://cdn.example.com/renders/xxx/output.mp4",
-    "duration": 30.5,
-    "size": 15728640
-  }
-}
-```
+**Non-video requests**: redirect to other tools.
 
-| 状态 | 说明 |
-|------|------|
-| `pending` | 等待处理 |
-| `processing` | 正在渲染 |
-| `completed` | 渲染完成，`output.url` 包含下载链接 |
-| `failed` | 渲染失败 |
+**Credits/Export**: handle directly via §3.3/§3.5, never forward to backend.
 
-#### 5.3 下载视频
+## 6. Limitations
 
-```bash
-curl -X GET "${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}/api/render/proxy/<render_task_id>/download" \
-  -H "Authorization: Bearer ${NEMO_TOKEN}" \
-  -o output.mp4
-```
+Pass all generation params to backend as-is (don't intercept). Be honest about limits:
+- Change aspect ratio → must regenerate
+- YouTube/Spotify URLs → "Built-in library has similar styles"
+- Edit photos → "I can make a slideshow"
+- Local files → user must send in chat or provide URL
 
-## 错误处理
+## 7. Error Handling
 
-| 错误码 | 说明 |
-|--------|------|
-| `0` | 成功 |
-| `1001` | 未授权（Token 无效或过期） |
-| `1002` | 会话不存在 |
-| `2001` | 积分不足 |
-| `4001` | 文件类型不支持 |
-| `4002` | 文件过大 |
-| `429` | 请求频率过高（每人每 7 天 1 个） |
-| `400` | 缺少必填头 `X-Client-Id`（匿名 Token 必须带该头） |
+| Code | Meaning | Action |
+|------|---------|--------|
+| 0 | Success | Continue |
+| 1001 | Bad/expired token | Re-auth via anonymous-token |
+| 1002 | Session not found | New session §3.0 |
+| 2001 | No credits | Anonymous: show registration URL with `?bind={user_id}`. Registered: "Top up at nemovideo.ai" |
+| 4001 | Unsupported file | Show supported formats |
+| 4002 | File too large | Suggest compress/trim |
+| 400 | Missing X-Client-Id | Generate Client-Id and retry (see §1) |
+| 402 | Free plan export blocked | Subscription tier issue, NOT credits. "Register at nemovideo.ai to unlock export." |
+| 429 | Rate limit (1 token/client/7 days) | Retry in 30s once |
 
-## Token 权限范围
+**Common**: no video → generate first; render fail → retry new `id`; SSE timeout → §3.6; silent edit → §3.1 fallback.
 
-创建 Token 时可选择权限范围：
+## 8. Version & Scopes
 
-| Scope | 说明 |
-|-------|------|
-| `read` | 读取会话和状态 |
-| `write` | 创建会话、发送消息 |
-| `upload` | 上传素材 |
-| `render` | 导出视频 |
-| `*` | 全部权限 |
+**Version**: 4.5.1. Check updates weekly: `clawhub search nemo-video --json`. Notify once if newer exists.
 
-## 匿名用户说明
+**Token scopes** (manual tokens via Settings → API Tokens): `read` | `write` | `upload` | `render` | `*` (all). Anonymous tokens have `*`.
 
-- 匿名 Token 有效期 7 天
-- 试用积分 100 点
-- 匿名用户可随时升级为正式用户（保留已有数据）
-
-## 积分不足处理
-
-当收到错误码 `2001`（积分不足）时：
-
-- **匿名用户**（`user_id` 以 `anon_` 开头）：需注册正式账号，**注册链接必须带上当前匿名用户标识以便与新账号绑定**：
-  - 注册地址格式：`https://nemovideo.com/register?bind=${user_id}`
-  - 其中 `user_id` 为当前匿名用户的 ID（如 `anon_abc123`），由创建会话或匿名 Token 接口返回，不可省略。
-  - 示例：`https://nemovideo.com/register?bind=anon_abc123def4567890`
-
-- **正式用户**：需购买更多积分
-  - 续费地址：https://nemovideo.com
+**Approximate costs**: generation ~100 credits/clip, editing ~50/session, export **free**.
