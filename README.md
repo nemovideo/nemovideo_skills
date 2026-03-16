@@ -82,7 +82,12 @@ When free credits run out, the Skill provides a registration link that preserves
 
 ## Version
 
-Current: **v4.6**
+Current: **v1.0** (see `VERSION` and SKILL.md frontmatter).
+
+### Version management
+
+- **Single source**: `VERSION` (root) and `version` in SKILL.md frontmatter. Keep them equal.
+- **When releasing**: run `./scripts/bump-version.sh <new_version>` (e.g. `4.7` or `4.6.0`), then commit and optionally `git tag v$(cat VERSION)`.
 
 ## Links
 
