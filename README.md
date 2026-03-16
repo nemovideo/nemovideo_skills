@@ -29,7 +29,7 @@ Nemo Video AI 视频创作平台的 Agent Skill。
 
 - Token 有效期 7 天
 - 试用积分 100 点
-- 每 IP 每小时最多申请 5 个匿名 Token
+- 每人每 7 天 1 个匿名 Token（请求必须带 `X-Client-Id` 头）；同 IP 每 7 天最多 10 个
 
 ## 积分不足
 

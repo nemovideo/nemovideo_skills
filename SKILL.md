@@ -23,8 +23,22 @@ metadata: {"openclaw": {"emoji": "🎬", "requires": {"env": []}, "primaryEnv": 
 
 首次使用时，如果 `NEMO_TOKEN` 未配置，自动调用以下接口获取：
 
+请求**必须**带请求头 `X-Client-Id`（客户端生成并持久化的 ID，用于按人限流）；未带则返回 400。
+
+**X-Client-Id 生成与持久化**：
+- **格式**：建议 UUID（如 `uuidgen` 输出），或任意唯一、稳定的字符串（≤64 字符）。
+- **何时生成**：首次请求匿名 Token 时生成一次；若本地已有则复用。
+- **持久化**（CLI/Skill/脚本）：优先从环境变量 `NEMO_CLIENT_ID` 读取；若无则生成并建议写入本地文件（如 `~/.config/nemovideo/client_id` 或 `.nemo_client_id`）或导出为 `NEMO_CLIENT_ID`，下次请求时使用同一值。
+
 ```bash
-curl -X POST "${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}/api/auth/anonymous-token"
+# 示例：从环境变量或文件读取，若无则生成（并建议写回文件）
+CLIENT_ID="${NEMO_CLIENT_ID:-$(cat ~/.config/nemovideo/client_id 2>/dev/null)}"
+if [ -z "$CLIENT_ID" ]; then
+  CLIENT_ID=$(uuidgen 2>/dev/null || echo "client-$(date +%s)-$RANDOM")
+  mkdir -p ~/.config/nemovideo && echo "$CLIENT_ID" > ~/.config/nemovideo/client_id
+fi
+curl -X POST "${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}/api/auth/anonymous-token" \
+  -H "X-Client-Id: $CLIENT_ID"
 ```
 
 响应示例：
@@ -54,17 +68,20 @@ curl -X POST "${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}/api/auth/anonym
 
 ### Step 0: 获取 Token（首次使用）
 
-如果 `NEMO_TOKEN` 未配置，先获取匿名 Token：
+如果 `NEMO_TOKEN` 未配置，先获取匿名 Token（必须带 `X-Client-Id` 头）：
 
 ```bash
-# 获取匿名 Token
-response=$(curl -s -X POST "${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}/api/auth/anonymous-token")
+# 使用持久化的 Client-Id（若无则生成并建议保存到 NEMO_CLIENT_ID 或本地文件）
+CLIENT_ID="${NEMO_CLIENT_ID:-$(uuidgen 2>/dev/null || echo "client-$(date +%s)-$RANDOM")}"
+response=$(curl -s -X POST "${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}/api/auth/anonymous-token" \
+  -H "X-Client-Id: $CLIENT_ID")
 NEMO_TOKEN=$(echo $response | jq -r '.data.token')
 NEMO_USER_ID=$(echo $response | jq -r '.data.user_id')
 
 # 保存供后续使用
 export NEMO_TOKEN
 export NEMO_USER_ID
+export NEMO_CLIENT_ID="$CLIENT_ID"
 ```
 
 ### Step 1: 创建会话
@@ -273,7 +290,8 @@ curl -X GET "${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}/api/render/proxy
 | `2001` | 积分不足 |
 | `4001` | 文件类型不支持 |
 | `4002` | 文件过大 |
-| `429` | 请求频率过高（匿名 Token 每 IP 每小时限 5 个） |
+| `429` | 请求频率过高（每人每 7 天 1 个，同 IP 最多 10 个/7 天） |
+| `400` | 缺少必填头 `X-Client-Id`（匿名 Token 必须带该头） |
 
 ## Token 权限范围
 
