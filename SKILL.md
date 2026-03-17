@@ -1,6 +1,6 @@
 ---
 name: nemo_video
-version: "1.0"
+version: "1.1"
 description: >
   AI video creation and editing — generate videos from text descriptions,
   edit with background music, sound effects, titles, transitions, and export finished MP4
@@ -34,6 +34,7 @@ You are an OpenClaw agent acting as the **interface layer** between the user and
 |----------|----------|---------|
 | `NEMO_TOKEN` | No | Auto-generated (100 free credits, does not expire) |
 | `NEMO_API_URL` | No | `https://mega-api-dev.nemovideo.ai` |
+| `NEMO_WEB_URL` | No | `https://dev.nemovideo.ai` |
 | `NEMO_CLIENT_ID` | No | Auto-generated UUID, persisted to `~/.config/nemovideo/client_id` |
 
 If `NEMO_TOKEN` is not set, get one (requires `X-Client-Id` header):
@@ -63,12 +64,12 @@ Save `token` as `NEMO_TOKEN`, `CLIENT_ID` as `NEMO_CLIENT_ID`. Anonymous: 1 toke
 
 ## 3. Core Flows
 
-`$API` = `${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}`, `$TOKEN` = `${NEMO_TOKEN}`.
+`$API` = `${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}`, `$TOKEN` = `${NEMO_TOKEN}`, `$WEB` = `${NEMO_WEB_URL:-https://dev.nemovideo.ai}`.
 
 All API requests MUST include these headers for attribution:
 ```
 X-Skill-Source: nemo-video
-X-Skill-Version: 1.0
+X-Skill-Version: 1.1
 X-Skill-Platform: github
 ```
 
@@ -76,17 +77,21 @@ X-Skill-Platform: github
 ```bash
 curl -s -X POST "$API/api/tasks/me/with-session/nemo_agent" \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -H "X-Skill-Source: nemo-video" -H "X-Skill-Version: 1.0" -H "X-Skill-Platform: github" \
+  -H "X-Skill-Source: nemo-video" -H "X-Skill-Version: 1.1" -H "X-Skill-Platform: github" \
   -d '{"task_name":"project","language":"<lang>"}'
 # → {"code":0,"data":{"task_id":"...","session_id":"..."}}
 ```
-Path uses **me**; only `NEMO_TOKEN` is needed. Save `session_id`, `task_id` for later. Tell user: "Web editor: https://nemovideo.ai/task/{task_id}"
+Path uses **me**; only `NEMO_TOKEN` is needed. Save `session_id`, `task_id` for later.
+
+**Open in browser**: After creating a session, give the user a link to view/edit the task in NemoVideo:
+`$WEB/workspace/task/{task_id}/{session_id}?nemo_token=$TOKEN`  
+(i.e. `${NEMO_WEB_URL:-https://dev.nemovideo.ai}/workspace/task/<task_id>/<session_id>?nemo_token=<NEMO_TOKEN>`). Replace `<task_id>`, `<session_id>` with the response values. Example: "You can open the project in the browser: $WEB/workspace/task/abc123/sess456?nemo_token=..."
 
 ### 3.1 Send Message via SSE
 ```bash
 curl -s -X POST "$API/run_sse" \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -H "Accept: text/event-stream" -H "X-Skill-Source: nemo-video" -H "X-Skill-Version: 1.0" -H "X-Skill-Platform: github" --max-time 900 \
+  -H "Accept: text/event-stream" -H "X-Skill-Source: nemo-video" -H "X-Skill-Version: 1.1" -H "X-Skill-Platform: github" --max-time 900 \
   -d '{"app_name":"nemo_agent","session_id":"<sid>","new_message":{"parts":[{"text":"<msg>"}]}}'
 ```
 Only **NEMO_TOKEN** and **session_id** are required. All fields **snake_case**. Before generation/editing, tell user: "This may take a few minutes."
@@ -230,7 +235,7 @@ Pass all generation params to backend as-is (don't intercept). Be honest about l
 
 ## 8. Version & Scopes
 
-**Version**: 1.0. Check updates weekly: `clawhub search nemo-video --json`. Notify once if newer exists.
+**Version**: 1.1. Check updates weekly: `clawhub search nemo-video --json`. Notify once if newer exists.
 
 **Token scopes** (manual tokens via Settings → API Tokens): `read` | `write` | `upload` | `render` | `*` (all). Anonymous tokens have `*`.
 
