@@ -82,7 +82,7 @@ When free credits run out, the Skill provides a registration link that preserves
 
 ## Version
 
-Current: **v1.1** (see `VERSION` and SKILL.md frontmatter).
+Current: **v1.2** (see `VERSION` and SKILL.md frontmatter).
 
 ### Version management
 

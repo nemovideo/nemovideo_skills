@@ -1,6 +1,6 @@
 ---
 name: nemo_video
-version: "1.1"
+version: "1.2"
 description: >
   AI video creation and editing — generate videos from text descriptions,
   edit with background music, sound effects, titles, transitions, and export finished MP4
@@ -69,7 +69,7 @@ Save `token` as `NEMO_TOKEN`, `CLIENT_ID` as `NEMO_CLIENT_ID`. Anonymous: 1 toke
 All API requests MUST include these headers for attribution:
 ```
 X-Skill-Source: nemo-video
-X-Skill-Version: 1.1
+X-Skill-Version: 1.2
 X-Skill-Platform: github
 ```
 
@@ -77,7 +77,7 @@ X-Skill-Platform: github
 ```bash
 curl -s -X POST "$API/api/tasks/me/with-session/nemo_agent" \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -H "X-Skill-Source: nemo-video" -H "X-Skill-Version: 1.1" -H "X-Skill-Platform: github" \
+  -H "X-Skill-Source: nemo-video" -H "X-Skill-Version: 1.2" -H "X-Skill-Platform: github" \
   -d '{"task_name":"project","language":"<lang>"}'
 # → {"code":0,"data":{"task_id":"...","session_id":"..."}}
 ```
@@ -91,7 +91,7 @@ Path uses **me**; only `NEMO_TOKEN` is needed. Save `session_id`, `task_id` for 
 ```bash
 curl -s -X POST "$API/run_sse" \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -H "Accept: text/event-stream" -H "X-Skill-Source: nemo-video" -H "X-Skill-Version: 1.1" -H "X-Skill-Platform: github" --max-time 900 \
+  -H "Accept: text/event-stream" -H "X-Skill-Source: nemo-video" -H "X-Skill-Version: 1.2" -H "X-Skill-Platform: github" --max-time 900 \
   -d '{"app_name":"nemo_agent","session_id":"<sid>","new_message":{"parts":[{"text":"<msg>"}]}}'
 ```
 Only **NEMO_TOKEN** and **session_id** are required. All fields **snake_case**. Before generation/editing, tell user: "This may take a few minutes."
@@ -174,7 +174,9 @@ Status at top-level `status`: pending → processing → completed / failed. Dow
 
 **d)** Download from `output.url` → send to user. Fallback: `$API/api/render/proxy/<id>/download`.
 
-Progress messages: start "⏳ Rendering ~30s" → "⏳ 50%" → "✅ Video ready!" + file.
+**e)** When delivering the video, **always also give the task detail link** so the user can open the project in the browser: `$WEB/workspace/task/<task_id>/<session_id>?nemo_token=$TOKEN` (use the current session's `task_id` and `session_id`). Example: "✅ Video ready! [Download link]. You can also open the project in NemoVideo: $WEB/workspace/task/abc123/sess456?nemo_token=..."
+
+Progress messages: start "⏳ Rendering ~30s" → "⏳ 50%" → "✅ Video ready!" + file + **task detail link**.
 
 ### 3.6 SSE Disconnect Recovery
 
@@ -209,6 +211,8 @@ Backend assumes GUI. **Never forward GUI instructions.** Translate:
 
 **Credits/Export**: handle directly via §3.3/§3.5, never forward to backend.
 
+**After export**: when sending the video to the user, always include the **task detail link** (`$WEB/workspace/task/<task_id>/<session_id>?nemo_token=$TOKEN`) so they can open the project in the browser.
+
 ## 6. Limitations
 
 Pass all generation params to backend as-is (don't intercept). Be honest about limits:
@@ -235,7 +239,7 @@ Pass all generation params to backend as-is (don't intercept). Be honest about l
 
 ## 8. Version & Scopes
 
-**Version**: 1.1. Check updates weekly: `clawhub search nemo-video --json`. Notify once if newer exists.
+**Version**: 1.2. Check updates weekly: `clawhub search nemo-video --json`. Notify once if newer exists.
 
 **Token scopes** (manual tokens via Settings → API Tokens): `read` | `write` | `upload` | `render` | `*` (all). Anonymous tokens have `*`.
 
