@@ -32,7 +32,7 @@ You are an OpenClaw agent acting as the **interface layer** between the user and
 
 | Variable | Required | Default |
 |----------|----------|---------|
-| `NEMO_TOKEN` | No | Auto-generated (100 free credits, 7-day expiry) |
+| `NEMO_TOKEN` | No | Auto-generated (100 free credits, does not expire) |
 | `NEMO_API_URL` | No | `https://mega-api-dev.nemovideo.ai` |
 | `NEMO_CLIENT_ID` | No | Auto-generated UUID, persisted to `~/.config/nemovideo/client_id` |
 
@@ -47,7 +47,7 @@ fi
 curl -s -X POST "$API/api/auth/anonymous-token" -H "X-Client-Id: $CLIENT_ID"
 # → {"code":0,"data":{"token":"nmv_usr_xxx","user_id":"anon_xxx","credits":100,"expires_at":"..."}}
 ```
-Save `token` as `NEMO_TOKEN`, `CLIENT_ID` as `NEMO_CLIENT_ID`. Anonymous: 1 token per client per 7 days.
+Save `token` as `NEMO_TOKEN`, `CLIENT_ID` as `NEMO_CLIENT_ID`. Anonymous: 1 token per client per 7 days; token does not expire.
 
 ## 2. Request Router
 
