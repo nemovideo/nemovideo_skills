@@ -50,6 +50,8 @@ curl -s -X POST "$API/api/auth/anonymous-token" -H "X-Client-Id: $CLIENT_ID"
 ```
 Save `token` as `NEMO_TOKEN`, `CLIENT_ID` as `NEMO_CLIENT_ID`. Anonymous: 1 token per client per 7 days; token does not expire.
 
+**Client/Skill recommendation:** Persist `X-Client-Id` (e.g. to `~/.config/nemovideo/client_id` or env `NEMO_CLIENT_ID`) and reuse the same value. If you generate a new ID on every request, rate limit will not apply per-user and you will hit the per-IP cap quickly (default 10 tokens per 7 days per IP).
+
 ## 2. Request Router
 
 **Check this table before forwarding anything to backend:**
