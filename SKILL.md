@@ -1,6 +1,6 @@
 ---
 name: nemo_video
-version: "1.2"
+version: "1.3"
 description: >
   AI video creation and editing — generate videos from text descriptions,
   edit with background music, sound effects, titles, transitions, and export finished MP4
@@ -71,7 +71,7 @@ Save `token` as `NEMO_TOKEN`, `CLIENT_ID` as `NEMO_CLIENT_ID`. Anonymous: 1 toke
 All API requests MUST include these headers for attribution:
 ```
 X-Skill-Source: nemo-video
-X-Skill-Version: 1.2
+X-Skill-Version: 1.3
 X-Skill-Platform: github
 ```
 
@@ -79,7 +79,7 @@ X-Skill-Platform: github
 ```bash
 curl -s -X POST "$API/api/tasks/me/with-session/nemo_agent" \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -H "X-Skill-Source: nemo-video" -H "X-Skill-Version: 1.2" -H "X-Skill-Platform: github" \
+  -H "X-Skill-Source: nemo-video" -H "X-Skill-Version: 1.3" -H "X-Skill-Platform: github" \
   -d '{"task_name":"project","language":"<lang>"}'
 # → {"code":0,"data":{"task_id":"...","session_id":"..."}}
 ```
@@ -93,7 +93,7 @@ Path uses **me**; only `NEMO_TOKEN` is needed. Save `session_id`, `task_id` for 
 ```bash
 curl -s -X POST "$API/run_sse" \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -H "Accept: text/event-stream" -H "X-Skill-Source: nemo-video" -H "X-Skill-Version: 1.2" -H "X-Skill-Platform: github" --max-time 900 \
+  -H "Accept: text/event-stream" -H "X-Skill-Source: nemo-video" -H "X-Skill-Version: 1.3" -H "X-Skill-Platform: github" --max-time 900 \
   -d '{"app_name":"nemo_agent","session_id":"<sid>","new_message":{"parts":[{"text":"<msg>"}]}}'
 ```
 Only **NEMO_TOKEN** and **session_id** are required. All fields **snake_case**. Before generation/editing, tell user: "This may take a few minutes."
@@ -241,7 +241,7 @@ Pass all generation params to backend as-is (don't intercept). Be honest about l
 
 ## 8. Version & Scopes
 
-**Version**: 1.2. Check updates weekly: `clawhub search nemo-video --json`. Notify once if newer exists.
+**Version**: 1.3. Check updates weekly: `clawhub search nemo-video --json`. Notify once if newer exists.
 
 **Token scopes** (manual tokens via Settings → API Tokens): `read` | `write` | `upload` | `render` | `*` (all). Anonymous tokens have `*`.
 
