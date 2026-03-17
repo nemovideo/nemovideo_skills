@@ -45,7 +45,7 @@ if [ -z "$CLIENT_ID" ]; then
   mkdir -p ~/.config/nemovideo && echo "$CLIENT_ID" > ~/.config/nemovideo/client_id
 fi
 curl -s -X POST "$API/api/auth/anonymous-token" -H "X-Client-Id: $CLIENT_ID"
-# → {"code":0,"data":{"token":"nmv_usr_xxx","user_id":"anon_xxx","credits":100,"expires_at":"..."}}
+# → {"code":0,"data":{"token":"nmv_usr_xxx","credits":100,...}}
 ```
 Save `token` as `NEMO_TOKEN`, `CLIENT_ID` as `NEMO_CLIENT_ID`. Anonymous: 1 token per client per 7 days; token does not expire.
 
@@ -78,18 +78,18 @@ curl -s -X POST "$API/api/tasks/me/with-session/nemo_agent" \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -H "X-Skill-Source: nemo-video" -H "X-Skill-Version: 1.0" -H "X-Skill-Platform: github" \
   -d '{"task_name":"project","language":"<lang>"}'
-# → {"code":0,"data":{"task_id":"...","session_id":"...","user_id":"..."}}
+# → {"code":0,"data":{"task_id":"...","session_id":"..."}}
 ```
-Save `session_id`, `user_id`, `task_id`. Tell user: "Web editor: https://nemovideo.ai/task/{task_id}"
+Path uses **me**; only `NEMO_TOKEN` is needed. Save `session_id`, `task_id` for later. Tell user: "Web editor: https://nemovideo.ai/task/{task_id}"
 
 ### 3.1 Send Message via SSE
 ```bash
 curl -s -X POST "$API/run_sse" \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -H "Accept: text/event-stream" -H "X-Skill-Source: nemo-video" -H "X-Skill-Version: 1.0" -H "X-Skill-Platform: github" --max-time 900 \
-  -d '{"app_name":"nemo_agent","user_id":"<uid>","session_id":"<sid>","new_message":{"parts":[{"text":"<msg>"}]}}'
+  -d '{"app_name":"nemo_agent","session_id":"<sid>","new_message":{"parts":[{"text":"<msg>"}]}}'
 ```
-All fields **snake_case**. Before generation/editing, tell user: "This may take a few minutes."
+Only **NEMO_TOKEN** and **session_id** are required. All fields **snake_case**. Before generation/editing, tell user: "This may take a few minutes."
 
 #### SSE Handling
 
@@ -120,9 +120,11 @@ Ignore trailing "I encountered a temporary issue" if prior responses were normal
 
 ### 3.2 Upload
 
-**File upload**: `curl -s -X POST "$API/api/upload-video/nemo_agent/<uid>/<sid>" -H "Authorization: Bearer $TOKEN" -F "files=@/path/to/file"`
+**File upload**: `curl -s -X POST "$API/api/upload-video/nemo_agent/me/<sid>" -H "Authorization: Bearer $TOKEN" -F "files=@/path/to/file"`
 
-**URL upload**: `curl -s -X POST "$API/api/upload-video/nemo_agent/<uid>/<sid>" -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"urls":["<url>"],"source_type":"url"}'`
+**URL upload**: `curl -s -X POST "$API/api/upload-video/nemo_agent/me/<sid>" -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"urls":["<url>"],"source_type":"url"}'`
+
+Use **me** in the path; backend resolves user from token.
 
 Supported: mp4, mov, avi, webm, mkv, jpg, png, gif, webp, mp3, wav, m4a, aac.
 
@@ -137,8 +139,9 @@ curl -s "$API/api/credits/balance/simple" -H "Authorization: Bearer $TOKEN"
 
 ### 3.4 Query State
 ```bash
-curl -s "$API/api/state/nemo_agent/<uid>/<sid>/latest" -H "Authorization: Bearer $TOKEN"
+curl -s "$API/api/state/nemo_agent/me/<sid>/latest" -H "Authorization: Bearer $TOKEN"
 ```
+Use **me** for user in path; backend resolves from token.
 Key fields: `data.state.draft`, `data.state.video_infos`, `data.state.canvas_config`, `data.state.generated_media`.
 
 **Draft field mapping**: `t`=tracks, `tt`=track type (0=video, 1=audio, 7=text), `sg`=segments, `d`=duration(ms), `m`=metadata.
@@ -216,7 +219,7 @@ Pass all generation params to backend as-is (don't intercept). Be honest about l
 | 0 | Success | Continue |
 | 1001 | Bad/expired token | Re-auth via anonymous-token |
 | 1002 | Session not found | New session §3.0 |
-| 2001 | No credits | Anonymous: show registration URL with `?bind={user_id}`. Registered: "Top up at nemovideo.ai" |
+| 2001 | No credits | Anonymous: show registration URL with `?bind=<id>` (get `<id>` from create-session or state response when needed). Registered: "Top up at nemovideo.ai" |
 | 4001 | Unsupported file | Show supported formats |
 | 4002 | File too large | Suggest compress/trim |
 | 400 | Missing X-Client-Id | Generate Client-Id and retry (see §1) |
