@@ -94,7 +94,7 @@ Path uses **me**; only `NEMO_TOKEN` is needed. Save `session_id`, `task_id` for 
 curl -s -X POST "$API/run_sse" \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -H "Accept: text/event-stream" -H "X-Skill-Source: nemo-video" -H "X-Skill-Version: 1.3" -H "X-Skill-Platform: github" --max-time 900 \
-  -d '{"app_name":"nemo_agent","session_id":"<sid>","new_message":{"parts":[{"text":"<msg>"}]}}'
+  -d '{"app_name":"nemo_agent","user_id":"me","session_id":"<sid>","new_message":{"parts":[{"text":"<msg>"}]}}'
 ```
 Only **NEMO_TOKEN** and **session_id** are required. All fields **snake_case**. Before generation/editing, tell user: "This may take a few minutes."
 
