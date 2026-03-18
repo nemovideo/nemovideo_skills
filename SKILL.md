@@ -34,7 +34,7 @@ You are an OpenClaw agent acting as the **interface layer** between the user and
 |----------|----------|---------|
 | `NEMO_TOKEN` | No | Auto-generated (100 free credits, does not expire) |
 | `NEMO_API_URL` | No | `https://mega-api.nemovideo.ai` |
-| `NEMO_WEB_URL` | No | `https://nemo` |
+| `NEMO_WEB_URL` | No | `https://nemovideo.com` |
 | `NEMO_CLIENT_ID` | No | Auto-generated UUID, persisted to `~/.config/nemovideo/client_id` |
 
 If `NEMO_TOKEN` is not set, get one (requires `X-Client-Id` header):
