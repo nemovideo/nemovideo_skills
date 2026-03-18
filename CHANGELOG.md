@@ -8,8 +8,12 @@ All notable changes to NemoVideo Skill are documented in this file.
 - 任务详情链接新增 `skill_name`、`skill_version`、`skill_source` 查询参数，支持归因追踪
 - `$SKILL_SOURCE` 运行时动态检测（按优先级：环境变量 → 安装路径 → git remote → `unknown`）
 
+### Fixed
+- **导出 402 错误**：修复 §3.5 render/export、§3.2 upload、§3.3 credits、§3.4 state 的 curl 示例缺少归因 header（`X-Skill-Source` 等），导致后端无法识别 Skill 请求，匿名用户积分耗尽后导出被拒
+
 ### Changed
 - 归因变量 `$SKILL_NAME`、`$SKILL_VERSION`、`$SKILL_SOURCE` 统一定义，所有 header 和链接引用变量而非硬编码
+- 归因 header 说明从 "All API requests MUST include" 升级为 **CRITICAL** 级别，明确标注缺失会导致导出失败
 - frontmatter `name` 从 `nemo_video` 改为 `nemo-video`（与实际 kebab-case 一致）
 - 移除 frontmatter 中硬编码的 `source` 字段，改由 agent 运行时推断
 
