@@ -1,6 +1,6 @@
 ---
 name: nemo-video
-version: "1.5"
+version: "1.6"
 description: >
   AI video creation and editing — generate videos from text descriptions,
   edit with background music, sound effects, titles, transitions, and export finished MP4
@@ -33,8 +33,8 @@ You are an OpenClaw agent acting as the **interface layer** between the user and
 | Variable | Required | Default |
 |----------|----------|---------|
 | `NEMO_TOKEN` | No | Auto-generated (100 free credits, does not expire) |
-| `NEMO_API_URL` | No | `https://mega-api-dev.nemovideo.ai` |
-| `NEMO_WEB_URL` | No | `https://dev.nemovideo.ai` |
+| `NEMO_API_URL` | No | `https://mega-api.nemovideo.ai` |
+| `NEMO_WEB_URL` | No | `https://nemo` |
 | `NEMO_CLIENT_ID` | No | Auto-generated UUID, persisted to `~/.config/nemovideo/client_id` |
 
 If `NEMO_TOKEN` is not set, get one (requires `X-Client-Id` header):
@@ -66,7 +66,7 @@ Save `token` as `NEMO_TOKEN`, `CLIENT_ID` as `NEMO_CLIENT_ID`. Anonymous: 1 toke
 
 ## 3. Core Flows
 
-`$API` = `${NEMO_API_URL:-https://mega-api-dev.nemovideo.ai}`, `$TOKEN` = `${NEMO_TOKEN}`, `$WEB` = `${NEMO_WEB_URL:-https://dev.nemovideo.ai}`.
+`$API` = `${NEMO_API_URL:-https://mega-api.nemovideo.ai}`, `$TOKEN` = `${NEMO_TOKEN}`, `$WEB` = `${NEMO_WEB_URL:-https://nemovideo.com}`.
 
 Skill attribution variables — do NOT hardcode:
 - `$SKILL_NAME` = this file's YAML frontmatter `name`
@@ -96,7 +96,7 @@ Path uses **me**; only `NEMO_TOKEN` is needed. Save `session_id`, `task_id` for 
 
 **Open in browser**: After creating a session, give the user a link to view/edit the task in NemoVideo:
 `$WEB/workspace/claim?token=$TOKEN&task={task_id}&session={session_id}&skill_name=$SKILL_NAME&skill_version=$SKILL_VERSION&skill_source=$SKILL_SOURCE`  
-(i.e. `${NEMO_WEB_URL:-https://dev.nemovideo.ai}/workspace/claim?token=<NEMO_TOKEN>&task=<task_id>&session=<session_id>&skill_name=<SKILL_NAME>&skill_version=<SKILL_VERSION>&skill_source=<SKILL_SOURCE>`). Replace `<task_id>`, `<session_id>` with the response values; `<SKILL_NAME>`, `<SKILL_VERSION>`, `<SKILL_SOURCE>` with the frontmatter values.
+(i.e. `${NEMO_WEB_URL:-https://nemovideo.com}/workspace/claim?token=<NEMO_TOKEN>&task=<task_id>&session=<session_id>&skill_name=<SKILL_NAME>&skill_version=<SKILL_VERSION>&skill_source=<SKILL_SOURCE>`). Replace `<task_id>`, `<session_id>` with the response values; `<SKILL_NAME>`, `<SKILL_VERSION>`, `<SKILL_SOURCE>` with the frontmatter values.
 
 ### 3.1 Send Message via SSE
 ```bash
