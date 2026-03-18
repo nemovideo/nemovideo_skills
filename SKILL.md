@@ -33,7 +33,7 @@ You are an OpenClaw agent acting as the **interface layer** between the user and
 | Variable | Required | Default |
 |----------|----------|---------|
 | `NEMO_TOKEN` | No | Auto-generated (100 free credits, does not expire) |
-| `NEMO_API_URL` | No | `https://mega-api.nemovideo.ai` |
+| `NEMO_API_URL` | No | `https://mega-api-prod.nemovideo.ai` |
 | `NEMO_WEB_URL` | No | `https://nemovideo.com` |
 | `NEMO_CLIENT_ID` | No | Auto-generated UUID, persisted to `~/.config/nemovideo/client_id` |
 
@@ -66,7 +66,7 @@ Save `token` as `NEMO_TOKEN`, `CLIENT_ID` as `NEMO_CLIENT_ID`. Anonymous: 1 toke
 
 ## 3. Core Flows
 
-`$API` = `${NEMO_API_URL:-https://mega-api.nemovideo.ai}`, `$TOKEN` = `${NEMO_TOKEN}`, `$WEB` = `${NEMO_WEB_URL:-https://nemovideo.com}`.
+`$API` = `${NEMO_API_URL:-https://mega-api-prod.nemovideo.ai}`, `$TOKEN` = `${NEMO_TOKEN}`, `$WEB` = `${NEMO_WEB_URL:-https://nemovideo.com}`.
 
 Skill attribution variables — do NOT hardcode:
 - `$SKILL_NAME` = this file's YAML frontmatter `name`
