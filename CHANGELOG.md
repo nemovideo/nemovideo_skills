@@ -2,6 +2,17 @@
 
 All notable changes to NemoVideo Skill are documented in this file.
 
+## [1.5] - 2026-03-18
+
+### Added
+- 任务详情链接新增 `skill_name`、`skill_version`、`skill_source` 查询参数，支持归因追踪
+- `$SKILL_SOURCE` 运行时动态检测（按优先级：环境变量 → 安装路径 → git remote → `unknown`）
+
+### Changed
+- 归因变量 `$SKILL_NAME`、`$SKILL_VERSION`、`$SKILL_SOURCE` 统一定义，所有 header 和链接引用变量而非硬编码
+- frontmatter `name` 从 `nemo_video` 改为 `nemo-video`（与实际 kebab-case 一致）
+- 移除 frontmatter 中硬编码的 `source` 字段，改由 agent 运行时推断
+
 ## [1.4] - 2025-03-18
 
 ### Changed
