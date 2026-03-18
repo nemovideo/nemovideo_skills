@@ -1,6 +1,6 @@
 ---
 name: nemo-video
-version: "1.4"
+version: "1.5"
 description: >
   AI video creation and editing — generate videos from text descriptions,
   edit with background music, sound effects, titles, transitions, and export finished MP4
