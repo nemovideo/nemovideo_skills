@@ -2,6 +2,12 @@
 
 All notable changes to NemoVideo Skill are documented in this file.
 
+## [1.8.2] - 2026-03-19
+
+### Fixed
+
+- **修复 metadata 不一致**：`requires.env` 从列出 5 个变量改为空数组，与 SKILL.md 中 "Required: No" 一致（ClawHub 扫描器将 `requires.env` 解读为必须预配置的变量）
+
 ## [1.8] - 2026-03-19
 
 ### Security

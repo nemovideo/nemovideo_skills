@@ -1,6 +1,6 @@
 ---
 name: nemo-video
-version: "1.8"
+version: "1.8.2"
 description: >
   AI video creation and editing — generate videos from text descriptions,
   edit with background music, sound effects, titles, transitions, and export finished MP4
@@ -12,7 +12,7 @@ description: >
   关键词：AI视频制作、视频剪辑、文字生成视频、短视频制作、视频导出、添加字幕、添加背景音乐。
 homepage: https://nemovideo.com
 repository: https://github.com/nemovideo/nemovideo_skills
-metadata: {"openclaw": {"emoji": "🎬", "requires": {"env": ["NEMO_TOKEN", "NEMO_API_URL", "NEMO_WEB_URL", "NEMO_CLIENT_ID", "SKILL_SOURCE"], "configPaths": ["~/.config/nemovideo/"]}, "primaryEnv": "NEMO_TOKEN"}}
+metadata: {"openclaw": {"emoji": "🎬", "requires": {"env": [], "configPaths": ["~/.config/nemovideo/"]}, "primaryEnv": "NEMO_TOKEN"}}
 ---
 
 # NemoVideo — AI Video Creation Skill

@@ -82,7 +82,7 @@ When free credits run out, the Skill provides a registration link that preserves
 
 ## Version
 
-Current: **v1.8** — see [CHANGELOG.md](CHANGELOG.md) for full release history.
+Current: **v1.8.2** — see [CHANGELOG.md](CHANGELOG.md) for full release history.
 
 ### Version management
 
