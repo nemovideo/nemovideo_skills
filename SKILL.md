@@ -1,6 +1,6 @@
 ---
 name: nemo-video
-version: "1.6"
+version: "1.7"
 description: >
   AI video creation and editing — generate videos from text descriptions,
   edit with background music, sound effects, titles, transitions, and export finished MP4
@@ -10,7 +10,9 @@ description: >
   check video credits, or any video production task. Supports mp4, mov, avi, webm, mkv,
   jpg, png, gif, webp, mp3, wav, m4a, aac. Free trial with 100 credits.
   关键词：AI视频制作、视频剪辑、文字生成视频、短视频制作、视频导出、添加字幕、添加背景音乐。
-metadata: {"openclaw": {"emoji": "🎬", "requires": {"env": []}, "primaryEnv": "NEMO_TOKEN"}}
+homepage: https://nemovideo.com
+repository: https://github.com/nemovideo/nemovideo_skills
+metadata: {"openclaw": {"emoji": "🎬", "requires": {"env": ["NEMO_TOKEN", "NEMO_API_URL", "NEMO_WEB_URL", "NEMO_CLIENT_ID", "SKILL_SOURCE"], "configPaths": ["~/.config/nemovideo/"]}, "primaryEnv": "NEMO_TOKEN"}}
 ---
 
 # NemoVideo — AI Video Creation Skill
@@ -32,10 +34,11 @@ You are an OpenClaw agent acting as the **interface layer** between the user and
 
 | Variable | Required | Default |
 |----------|----------|---------|
-| `NEMO_TOKEN` | No | Auto-generated (100 free credits, does not expire) |
+| `NEMO_TOKEN` | No | Auto-generated (100 free credits, revocable via Settings → API Tokens) |
 | `NEMO_API_URL` | No | `https://mega-api-prod.nemovideo.ai` |
 | `NEMO_WEB_URL` | No | `https://nemovideo.com` |
-| `NEMO_CLIENT_ID` | No | Auto-generated UUID, persisted to `~/.config/nemovideo/client_id` |
+| `NEMO_CLIENT_ID` | No | Auto-generated UUID, persisted to `~/.config/nemovideo/client_id` (UUID only, no secrets) |
+| `SKILL_SOURCE` | No | Auto-detected from install path, fallback `unknown` |
 
 If `NEMO_TOKEN` is not set, get one (requires `X-Client-Id` header):
 ```bash
@@ -48,9 +51,9 @@ fi
 curl -s -X POST "$API/api/auth/anonymous-token" -H "X-Client-Id: $CLIENT_ID"
 # → {"code":0,"data":{"token":"nmv_usr_xxx","credits":100,...}}
 ```
-Save `token` as `NEMO_TOKEN`, `CLIENT_ID` as `NEMO_CLIENT_ID`. Anonymous: 1 token per client per 7 days; token does not expire.
+Save `token` as `NEMO_TOKEN`, `CLIENT_ID` as `NEMO_CLIENT_ID`. Anonymous: 1 token per client per 7 days; token does not expire but can be revoked by the user at any time via **Settings → API Tokens** on nemovideo.com.
 
-**Client/Skill recommendation:** Persist `X-Client-Id` (e.g. to `~/.config/nemovideo/client_id` or env `NEMO_CLIENT_ID`) and reuse the same value. If you generate a new ID on every request, rate limit will not apply per-user and you will hit the per-IP cap quickly (default 10 tokens per 7 days per IP).
+**Local persistence:** This skill writes `~/.config/nemovideo/client_id` to persist the Client-Id across sessions. This avoids generating a new ID on every request, which would hit the per-IP rate limit quickly (default 10 tokens per 7 days per IP). The file contains only a UUID — no credentials are stored locally.
 
 ## 2. Request Router
 
@@ -74,8 +77,7 @@ Skill attribution variables — do NOT hardcode:
 - `$SKILL_SOURCE` = detect at runtime using the first match:
   1. Env `SKILL_SOURCE` if set
   2. If this file's path contains a known platform directory (e.g. `~/.clawhub/` → `clawhub`, `~/.cursor/skills/` → `cursor`)
-  3. If this file is inside a git repo, parse `git remote get-url origin`: `github.com` → `github`, `gitlab.com` → `gitlab`, `bitbucket.org` → `bitbucket`
-  4. Fallback: `unknown`
+  3. Fallback: `unknown`
 
 **CRITICAL**: ALL API requests (including render/export/upload/state/credits) MUST include these headers. Missing them will cause export to fail with 402.
 ```
@@ -254,6 +256,6 @@ Pass all generation params to backend as-is (don't intercept). Be honest about l
 
 **Version**: see frontmatter `version`. Check updates weekly: `clawhub search nemo-video --json`. Notify once if newer exists.
 
-**Token scopes** (manual tokens via Settings → API Tokens): `read` | `write` | `upload` | `render` | `*` (all). Anonymous tokens have `*`.
+**Token scopes** (manual tokens via Settings → API Tokens): `read` | `write` | `upload` | `render` | `*` (all). Anonymous tokens have `*`. All tokens (including anonymous) can be revoked at any time via **Settings → API Tokens** on nemovideo.com.
 
 **Approximate costs**: generation ~100 credits/clip, editing ~50/session, export **free**.

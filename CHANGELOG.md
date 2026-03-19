@@ -2,6 +2,21 @@
 
 All notable changes to NemoVideo Skill are documented in this file.
 
+## [1.7] - 2026-03-19
+
+### Security
+
+- **移除 git remote 嗅探**：`$SKILL_SOURCE` 检测不再执行 `git remote get-url origin`，仅通过环境变量和安装路径推断，降低隐私侵入性
+- **补充 metadata 声明**：`requires.env` 列出所有环境变量（`NEMO_TOKEN`、`NEMO_API_URL`、`NEMO_WEB_URL`、`NEMO_CLIENT_ID`、`SKILL_SOURCE`），新增 `configPaths` 声明本地写入路径
+- **新增 homepage / repository**：frontmatter 增加项目主页和代码仓库链接，提升来源可审计性
+
+### Changed
+
+- 环境变量表新增 `SKILL_SOURCE` 行，明确其自动检测行为
+- `NEMO_TOKEN` 描述从 "does not expire" 改为 "revocable via Settings → API Tokens"
+- 本地持久化（`~/.config/nemovideo/client_id`）显式声明为仅存储 UUID，不含凭证
+- Token scopes 段落补充 revocation 说明
+
 ## [1.5] - 2026-03-18
 
 ### Added
