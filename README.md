@@ -70,7 +70,7 @@ The Skill acts as an **interface layer** between OpenClaw and NemoVideo's backen
 
 ### Getting More Credits
 
-When free credits run out, the Skill provides a registration link that preserves your project history. Register at [nemovideo.ai](https://nemovideo.ai) for more credits.
+When free credits run out, the Skill provides a registration link that preserves your project history. Register at [nemovideo.com](https://nemovideo.com) for more credits.
 
 ## Supported Formats
 
@@ -82,7 +82,7 @@ When free credits run out, the Skill provides a registration link that preserves
 
 ## Version
 
-Current: **v1.8.2** — see [CHANGELOG.md](CHANGELOG.md) for full release history.
+Current: **v1.9** — see [CHANGELOG.md](CHANGELOG.md) for full release history.
 
 ### Version management
 
@@ -91,7 +91,7 @@ Current: **v1.8.2** — see [CHANGELOG.md](CHANGELOG.md) for full release histor
 
 ## Links
 
-- 🌐 [NemoVideo](https://nemovideo.ai) — Product website
+- 🌐 [NemoVideo](https://nemovideo.com) — Product website
 - 📦 [ClawHub](https://clawhub.com) — Skill marketplace
 - 🐙 [OpenClaw](https://openclaw.ai) — Agent framework
 

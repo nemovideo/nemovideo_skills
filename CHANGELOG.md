@@ -2,6 +2,21 @@
 
 All notable changes to NemoVideo Skill are documented in this file.
 
+## [1.9] - 2026-03-19
+
+### Security
+
+- **P0: URL 中不再暴露 NEMO_TOKEN**：引入 claim token（`clm_*`）替代 URL 中的真实 token（`nmv_usr_*`）。claim token 无法调用任何业务 API，仅用于浏览器打开项目
+- 新增 `POST /api/auth/claim-token` 端点：用 NEMO_TOKEN 换取 claim token（TTL 7 天，可重复使用）
+- 浏览器链接从 `?token=$TOKEN&task=...&session=...` 简化为 `?ct=<claim_token>`，所有参数封装在 claim token 中
+
+### Changed
+
+- Section 3.0：新增 claim-token 调用步骤，URL 构造改为两步
+- Section 3.5(e)、5：task 详情链接改用 claim token
+- 新增 CRITICAL 提示：禁止将 `nmv_usr_*` token 放入 URL
+- 前端仅支持 `ct` 参数，不再兼容旧的 `token` 参数
+
 ## [1.8.2] - 2026-03-19
 
 ### Fixed
