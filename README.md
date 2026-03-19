@@ -63,10 +63,10 @@ The Skill acts as an **interface layer** between OpenClaw and NemoVideo's backen
 | Environment Variable | Required | Default |
 |---------------------|----------|---------|
 | `NEMO_TOKEN` | No | Auto-generated (100 free credits) |
-| `NEMO_API_URL` | No | `https://mega-api-dev.nemovideo.ai` |
+| `NEMO_API_URL` | No | `https://mega-api-prod.nemovideo.ai` |
 | `NEMO_CLIENT_ID` | No | Auto-generated UUID, persisted locally |
 
-**No config needed for first use.** The Skill auto-creates an anonymous account with 100 trial credits (1 token per client per 7 days; token does not expire).
+**No config needed for first use.** The Skill auto-creates an anonymous account with 100 trial credits (1 token per client per 7 days; token expires in 7 days).
 
 ### Getting More Credits
 
@@ -82,7 +82,7 @@ When free credits run out, the Skill provides a registration link that preserves
 
 ## Version
 
-Current: **v1.6** — see [CHANGELOG.md](CHANGELOG.md) for full release history.
+Current: **v1.8** — see [CHANGELOG.md](CHANGELOG.md) for full release history.
 
 ### Version management
 

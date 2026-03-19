@@ -2,6 +2,19 @@
 
 All notable changes to NemoVideo Skill are documented in this file.
 
+## [1.8] - 2026-03-19
+
+### Security
+
+- **匿名 Token 默认 7 天过期**：从 "does not expire" 改为 7 天有效期，与限流周期一致，降低 Token 泄露后的风险窗口
+- 匿名 Token scopes 描述更正为 `read`、`write`、`upload`（与后端实际行为一致，非 `*`）
+
+### Changed
+
+- 环境变量表 `NEMO_TOKEN` 描述新增 "expires in 7 days"
+- 错误码 1001 说明补充过期场景指引
+- Token 过期后可使用相同 `X-Client-Id` 重新申请
+
 ## [1.7] - 2026-03-19
 
 ### Security

@@ -1,6 +1,6 @@
 ---
 name: nemo-video
-version: "1.7"
+version: "1.8"
 description: >
   AI video creation and editing — generate videos from text descriptions,
   edit with background music, sound effects, titles, transitions, and export finished MP4
@@ -34,7 +34,7 @@ You are an OpenClaw agent acting as the **interface layer** between the user and
 
 | Variable | Required | Default |
 |----------|----------|---------|
-| `NEMO_TOKEN` | No | Auto-generated (100 free credits, revocable via Settings → API Tokens) |
+| `NEMO_TOKEN` | No | Auto-generated (100 free credits, expires in 7 days, revocable via Settings → API Tokens) |
 | `NEMO_API_URL` | No | `https://mega-api-prod.nemovideo.ai` |
 | `NEMO_WEB_URL` | No | `https://nemovideo.com` |
 | `NEMO_CLIENT_ID` | No | Auto-generated UUID, persisted to `~/.config/nemovideo/client_id` (UUID only, no secrets) |
@@ -51,7 +51,7 @@ fi
 curl -s -X POST "$API/api/auth/anonymous-token" -H "X-Client-Id: $CLIENT_ID"
 # → {"code":0,"data":{"token":"nmv_usr_xxx","credits":100,...}}
 ```
-Save `token` as `NEMO_TOKEN`, `CLIENT_ID` as `NEMO_CLIENT_ID`. Anonymous: 1 token per client per 7 days; token does not expire but can be revoked by the user at any time via **Settings → API Tokens** on nemovideo.com.
+Save `token` as `NEMO_TOKEN`, `CLIENT_ID` as `NEMO_CLIENT_ID`. Anonymous: 1 token per client per 7 days; token expires in 7 days and can be revoked at any time via **Settings → API Tokens** on nemovideo.com. If your token expires, request a new one with the same `X-Client-Id`.
 
 **Local persistence:** This skill writes `~/.config/nemovideo/client_id` to persist the Client-Id across sessions. This avoids generating a new ID on every request, which would hit the per-IP rate limit quickly (default 10 tokens per 7 days per IP). The file contains only a UUID — no credentials are stored locally.
 
@@ -241,7 +241,7 @@ Pass all generation params to backend as-is (don't intercept). Be honest about l
 | Code | Meaning | Action |
 |------|---------|--------|
 | 0 | Success | Continue |
-| 1001 | Bad/expired token | Re-auth via anonymous-token |
+| 1001 | Bad/expired token | Re-auth via anonymous-token (tokens expire after 7 days) |
 | 1002 | Session not found | New session §3.0 |
 | 2001 | No credits | Anonymous: show registration URL with `?bind=<id>` (get `<id>` from create-session or state response when needed). Registered: "Top up at nemovideo.ai" |
 | 4001 | Unsupported file | Show supported formats |
@@ -256,6 +256,6 @@ Pass all generation params to backend as-is (don't intercept). Be honest about l
 
 **Version**: see frontmatter `version`. Check updates weekly: `clawhub search nemo-video --json`. Notify once if newer exists.
 
-**Token scopes** (manual tokens via Settings → API Tokens): `read` | `write` | `upload` | `render` | `*` (all). Anonymous tokens have `*`. All tokens (including anonymous) can be revoked at any time via **Settings → API Tokens** on nemovideo.com.
+**Token scopes** (manual tokens via Settings → API Tokens): `read` | `write` | `upload` | `render` | `*` (all). Anonymous tokens have `read`, `write`, `upload` scopes and expire in 7 days. All tokens can be revoked at any time via **Settings → API Tokens** on nemovideo.com.
 
 **Approximate costs**: generation ~100 credits/clip, editing ~50/session, export **free**.
